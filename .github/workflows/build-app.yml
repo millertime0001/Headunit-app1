@@ -1,0 +1,31 @@
+name: Build phone app
+on:
+  push:
+    paths: ["headunit.zip", ".github/workflows/**"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack headunit.zip
+        run: |
+          unzip -q -o headunit.zip -d src
+          mkdir -p src/headunit/phone-app/app/src/main/assets/hu
+          cp -r src/headunit/web/. src/headunit/phone-app/app/src/main/assets/hu/
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.10.2" }
+      - name: Build
+        working-directory: src/headunit/phone-app
+        run: gradle assembleDebug --no-daemon
+      - name: Publish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          cp src/headunit/phone-app/app/build/outputs/apk/debug/app-debug.apk HeadUnitLink.apk
+          V=$(cat src/headunit/VERSION)
+          gh release create "app-${{ github.run_number }}" HeadUnitLink.apk --title "Head Unit Link (head unit $V)" --notes "Install HeadUnitLink.apk on the phone."
