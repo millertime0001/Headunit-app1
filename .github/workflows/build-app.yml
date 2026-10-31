@@ -1,7 +1,7 @@
 name: Build phone app
 on:
   push:
-    paths: ["headunit.zip", ".github/workflows/**"]
+    paths: ["**.zip", ".github/workflows/**"]
   workflow_dispatch:
 permissions:
   contents: write
@@ -10,9 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack headunit.zip
+        with: { fetch-depth: 0 }
+      - name: Unpack the newest uploaded zip
         run: |
-          unzip -q -o headunit.zip -d src
+          Z=$(git log -1 --name-only --pretty=format: -- '*.zip' | grep -m1 '\.zip$')
+          echo "Building from $Z"
+          unzip -q -o "$Z" -d src
           mkdir -p src/headunit/phone-app/app/src/main/assets/hu
           cp -r src/headunit/web/. src/headunit/phone-app/app/src/main/assets/hu/
       - uses: actions/setup-java@v4
